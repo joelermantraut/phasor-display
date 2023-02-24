@@ -25,6 +25,8 @@ class UpdateDist(object):
         # self.ax.axvline(1, linestyle='--', color='black')
         # Por si quiero dibujar alguna linea adicional
 
+        self.running = True
+
     def init(self):
         for line_k in self.ax.lines:
             line_k.set_data([], [])
@@ -38,6 +40,9 @@ class UpdateDist(object):
         return radio_data, theta_data
 
     def __call__(self, _):
+        if not self.running:
+            return
+
         for line_k in self.ax.lines:
             radio = rand.randint(0, 100)
             theta = rand.randint(0, 360)
@@ -46,20 +51,37 @@ class UpdateDist(object):
 
             line_k.set_data(theta_data, radio_data)
 
+    def stop_and_run(self):
+        self.running = not self.running
+
 class Display():
-    def __init__(self):
+    def __init__(self, axis_names):
         fig = plt.figure()
         ax = fig.add_subplot(111, projection="polar")
-        ud = UpdateDist(ax)
-        self.anim = FuncAnimation(fig, ud, frames=np.arange(10), init_func=ud.init,
+
+        plt.title("Con esto me recibo papu")
+        plt.xlabel("Eje X")
+        plt.ylabel("Eje Y")
+
+        self.ud = UpdateDist(ax)
+        self.anim = FuncAnimation(fig, self.ud, frames=np.arange(10), init_func=self.ud.init,
                             interval=10, blit=False, repeat=True)
         # Declaro anim como propia de la clase para que no se borre al salir del bloque
+
+        if (len(axis_names) == len(ax.lines)):
+            ax.legend(ax.lines, axis_names, loc="upper left", draggable=True, framealpha=1, borderaxespad=-3)
+
+        fig.canvas.mpl_connect('button_press_event', self.onclick)
+        # Para frenar la actualizacion
+
+    def onclick(self, event):
+        self.ud.stop_and_run()
 
     def show(self):
         plt.show()
 
 def main():
-    display = Display()
+    display = Display(["red", "blue", "green"])
     display.show()
 
 if __name__ == "__main__":
