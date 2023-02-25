@@ -24,7 +24,7 @@ class SocketClient():
         if self.is_available():
             data = self.server.recv(self.BUFFER_SIZE).decode("utf-8").split(",")
             data = [int(item) for item in data]
-        # Received two elements for line, comma separated
+        # Receives comma separated values
         
         return data
 
@@ -75,6 +75,7 @@ class UpdateDist(object):
             data = self.socketObject.read_data()
             if len(data) != 2 * len(self.ax.lines):
                 return
+            # Expects two values per line
             
             radio = [data[index] for index in range(0, len(data), 2)] # Even elements
             theta = [data[index + 1] for index in range(0, len(data), 2)] # Odd elements
