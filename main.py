@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.colors as mcolors
 
 from matplotlib.animation import FuncAnimation
 
@@ -42,10 +43,6 @@ class UpdateDist(object):
         self.ax = ax
         self.socketObject = socketObject
 
-        ax.plot([], [], color="red")
-        ax.plot([], [], color="blue")
-        ax.plot([], [], color="green")
-
         self.x = np.linspace(0, 1, 360)
 
         # Set up plot parameters
@@ -75,7 +72,7 @@ class UpdateDist(object):
             data = self.socketObject.read_data()
             if len(data) != 2 * len(self.ax.lines):
                 return
-            # Expects two values per line
+            # Expects two values per line, radio and theta, interleaved
             
             radio = [data[index] for index in range(0, len(data), 2)] # Even elements
             theta = [data[index + 1] for index in range(0, len(data), 2)] # Odd elements
@@ -93,29 +90,40 @@ class Display():
     Class to display polar plot. Parameters received are the 
     lines names, and socketObject to read received values.
     """
-    def __init__(self, axis_names, socketObject):
+    def __init__(self, TITLE, X_NAME, Y_NAME, LINES_NAMES, socketObject):
+        self.COLORS = [
+            "red",
+            "blue",
+            "green",
+            ""
+        ]
+
         fig = plt.figure()
         ax = fig.add_subplot(111, projection="polar")
 
-        plt.title("Phasor Display")
-        plt.xlabel("X axis")
-        plt.ylabel("Y axis", labelpad=30)
+        plt.title(TITLE)
+        plt.xlabel(X_NAME)
+        plt.ylabel(Y_NAME, labelpad=30)
         # Add space to not overwrite angle label
+
+        colors = list(mcolors.BASE_COLORS.values())
+
+        for i in range(len(LINES_NAMES)):
+            ax.plot([], [], color=colors[i  % len(colors)])
+
+        ax.legend(ax.lines, LINES_NAMES, loc="upper left", draggable=True, framealpha=1, borderaxespad=-3)
 
         self.ud = UpdateDist(ax, socketObject)
         self.anim = FuncAnimation(
             fig,
             self.ud,
-            frames=np.arange(10),
+            frames=np.arange(10), # 10 frames
             init_func=self.ud.init,
-            interval=10,
+            interval=10, # Updating interval
             blit=False,
             repeat=True
         )
         # Declare "anim" as property to not delete it after instance
-
-        if (len(axis_names) == len(ax.lines)):
-            ax.legend(ax.lines, axis_names, loc="upper left", draggable=True, framealpha=1, borderaxespad=-3)
 
         fig.canvas.mpl_connect('button_press_event', self.onclick)
         # Stop updating after left click on plot.
@@ -129,7 +137,7 @@ class Display():
 def main():
     socketObject = SocketClient("localhost", 65432)
 
-    display = Display(["red", "blue", "green"], socketObject)
+    display = Display("Phasor Display", "X axis", "Y axis", ["blue", "green", "red"], socketObject)
     display.show()
 
 if __name__ == "__main__":
