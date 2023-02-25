@@ -24,6 +24,7 @@ class SocketClient():
         if self.is_available():
             data = self.server.recv(self.BUFFER_SIZE).decode("utf-8").split(",")
             data = [int(item) for item in data]
+        # Received two elements for line, comma separated
         
         return data
 
